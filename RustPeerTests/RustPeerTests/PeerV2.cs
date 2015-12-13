@@ -107,13 +107,13 @@ namespace RustPeerTests
             peer.Close();
             string text = PeerV2.StringFromPointer(Native.NET_LastStartupError(peer.ptr));
             Debug.LogWarning(string.Concat(new object[]
-			{
-				"Couldn't create server on port ",
-				port,
-				" (",
-				text,
-				")"
-			}));
+            {
+                "Couldn't create server on port ",
+                port,
+                " (",
+                text,
+                ")"
+            }));
             return null;
         }
         public static PeerV2 CreateConnection(string hostname, int port, int retries, int retryDelay, int timeout)
@@ -126,15 +126,15 @@ namespace RustPeerTests
             }
             string text = PeerV2.StringFromPointer(Native.NET_LastStartupError(peer.ptr));
             Debug.LogWarning(string.Concat(new object[]
-			{
-				"Couldn't connect to server ",
-				hostname,
-				":",
-				port,
-				" (",
-				text,
-				")"
-			}));
+            {
+                "Couldn't connect to server ",
+                hostname,
+                ":",
+                port,
+                " (",
+                text,
+                ")"
+            }));
             peer.Close();
             return null;
         }
@@ -151,22 +151,22 @@ namespace RustPeerTests
             return !(this.ptr == IntPtr.Zero) && Native.NET_Receive(this.ptr);
         }
         public unsafe int Read(byte[] buffer, int offset, int length)
-		{
-			if (offset != 0)
-			{
-				throw new NotImplementedException("Offset != 0");
-			}
-			length = Mathf.Min(this.incomingBytesUnread, length);
-			fixed (byte* data = &buffer[0])
-			{
-				if (!Native.NETRCV_ReadBytes(this.ptr, data, length))
-				{
-					Debug.LogError("NETRCV_ReadBytes returned false");
-					return 0;
-				}
-			}
-			return length;
-		}
+        {
+            if (offset != 0)
+            {
+                throw new NotImplementedException("Offset != 0");
+            }
+            length = Mathf.Min(this.incomingBytesUnread, length);
+            fixed (byte* data = &buffer[0])
+            {
+                if (!Native.NETRCV_ReadBytes(this.ptr, data, length))
+                {
+                    Debug.LogError("NETRCV_ReadBytes returned false");
+                    return 0;
+                }
+            }
+            return length;
+        }
         public bool ReadBit()
         {
             return this.ReadUInt8() != 0;
@@ -247,36 +247,36 @@ namespace RustPeerTests
             return byteConvert.DoubleValue;
         }
         public unsafe byte ReadByte()
-		{
-			this.Check();
-			fixed (byte* data = &PeerV2.ByteBuffer[0])
-			{
-				if (!Native.NETRCV_ReadBytes(this.ptr, data, 1))
-				{
-					Debug.LogError("NETRCV_ReadBytes returned false");
-					return 0;
-				}
-			}
-			return PeerV2.ByteBuffer[0];
-		}
+        {
+            this.Check();
+            fixed (byte* data = &PeerV2.ByteBuffer[0])
+            {
+                if (!Native.NETRCV_ReadBytes(this.ptr, data, 1))
+                {
+                    Debug.LogError("NETRCV_ReadBytes returned false");
+                    return 0;
+                }
+            }
+            return PeerV2.ByteBuffer[0];
+        }
         public unsafe byte[] ReadBytes(int length)
-		{
-			this.Check();
-			if (length == -1)
-			{
-				length = this.incomingBytesUnread;
-			}
-			byte[] array = new byte[length];
-			fixed (byte* data = &array[0])
-			{
-				if (!Native.NETRCV_ReadBytes(this.ptr, data, length))
-				{
-					Debug.LogError("NETRCV_ReadBytes returned false");
-					return null;
-				}
-			}
-			return array;
-		}
+        {
+            this.Check();
+            if (length == -1)
+            {
+                length = this.incomingBytesUnread;
+            }
+            byte[] array = new byte[length];
+            fixed (byte* data = &array[0])
+            {
+                if (!Native.NETRCV_ReadBytes(this.ptr, data, length))
+                {
+                    Debug.LogError("NETRCV_ReadBytes returned false");
+                    return null;
+                }
+            }
+            return array;
+        }
         public void SendStart()
         {
             this.Check();
@@ -363,25 +363,25 @@ namespace RustPeerTests
             this.WriteUInt8(byteConvert.Byte7);
         }
         public unsafe void WriteBytes(byte[] val)
-		{
-			this.Check();
-			fixed (byte* data = &val[0])
-			{
-				Native.NETSND_WriteBytes(this.ptr, data, val.Length);
-			}
-		}
+        {
+            this.Check();
+            fixed (byte* data = &val[0])
+            {
+                Native.NETSND_WriteBytes(this.ptr, data, val.Length);
+            }
+        }
         public unsafe void WriteBytes(byte[] val, int offset, int length)
-		{
-			this.Check();
-			if (offset != 0)
-			{
-				throw new NotSupportedException("offset != 0");
-			}
-			fixed (byte* data = &val[0])
-			{
-				Native.NETSND_WriteBytes(this.ptr, data, length);
-			}
-		}
+        {
+            this.Check();
+            if (offset != 0)
+            {
+                throw new NotSupportedException("offset != 0");
+            }
+            fixed (byte* data = &val[0])
+            {
+                Native.NETSND_WriteBytes(this.ptr, data, length);
+            }
+        }
         public uint SendBroadcast(Priority priority, SendMethod reliability, sbyte channel)
         {
             this.Check();
@@ -457,12 +457,12 @@ namespace RustPeerTests
         public string GetStatisticsString(ulong guid)
         {
             return string.Format("Average Ping:\t\t{0}\nLast Ping:\t\t{1}\nLowest Ping:\t\t{2}\n{3}", new object[]
-			{
-				this.GetPingAverage(guid),
-				this.GetPingLast(guid),
-				this.GetPingLowest(guid),
-				PeerV2.StringFromPointer(Native.NET_GetStatisticsString(this.ptr, guid))
-			});
+            {
+                this.GetPingAverage(guid),
+                this.GetPingLast(guid),
+                this.GetPingLowest(guid),
+                PeerV2.StringFromPointer(Native.NET_GetStatisticsString(this.ptr, guid))
+            });
         }
         public int GetPingAverage(ulong guid)
         {

@@ -21,6 +21,7 @@ namespace RustPeerTests
             RELIABLE_WITH_ACK_RECEIPT,
             RELIABLE_ORDERED_WITH_ACK_RECEIPT
         }
+
         public IntPtr ptr;
         private static byte[] ByteBuffer = new byte[512];
         public uint sentSplitPackets;
@@ -98,7 +99,7 @@ namespace RustPeerTests
         }
         public static PeerV2 CreateServer(string ip, int port, int maxConnections)
         {
-            PeerV2 peer = new PeerV2();
+            Peer peer = new Peer();
             peer.ptr = Native.NET_Create();
             if (Native.NET_StartServer(peer.ptr, ip, port, maxConnections) == 0)
             {
@@ -118,7 +119,7 @@ namespace RustPeerTests
         }
         public static PeerV2 CreateConnection(string hostname, int port, int retries, int retryDelay, int timeout)
         {
-            PeerV2 peer = new PeerV2();
+            Peer peer = new Peer();
             peer.ptr = Native.NET_Create();
             if (Native.NET_StartClient(peer.ptr, hostname, port, retries, retryDelay, timeout) == 0)
             {
@@ -282,92 +283,68 @@ namespace RustPeerTests
             this.Check();
             Native.NETSND_Start(this.ptr);
         }
+
+        private unsafe void _Write(byte* data, int size)
+        {
+            Native.NETSND_WriteBytes(this.ptr, data, size);
+        }
+
         public void WriteBool(bool val)
         {
             this.WriteUInt8((byte)((!val) ? 0 : 1));
         }
         public unsafe void WriteUInt8(byte val)
         {
-            Native.NETSND_WriteBytes(this.ptr, &val, 1);
+            _Write(&val, sizeof (byte));
         }
-        public void WriteUInt16(ushort val)
+
+        public unsafe void WriteUInt16(ushort val)
         {
-            this.WriteInt16((short)val);
+            _Write((byte*)&val, sizeof(ushort));
         }
-        public void WriteUInt32(uint val)
+        public unsafe void WriteUInt32(uint val)
         {
-            this.WriteInt32((int)val);
+            _Write((byte*)&val, sizeof(uint));
         }
-        public void WriteUInt64(ulong val)
+        public unsafe void WriteUInt64(ulong val)
         {
-            this.WriteInt64((long)val);
+            _Write((byte*)&val, sizeof(ulong));
         }
-        public void WriteInt8(sbyte val)
+        public unsafe void WriteInt8(sbyte val)
         {
-            this.WriteUInt8((byte)val);
+            _Write((byte*)&val, sizeof(sbyte));
         }
-        public void WriteInt16(short val)
-        {
-            this.Check();
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Int16Value = val;
-            this.WriteUInt8(byteConvert.Byte0);
-            this.WriteUInt8(byteConvert.Byte1);
-        }
-        public void WriteInt32(int val)
+        public unsafe void WriteInt16(short val)
         {
             this.Check();
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Int32Value = val;
-            this.WriteUInt8(byteConvert.Byte0);
-            this.WriteUInt8(byteConvert.Byte1);
-            this.WriteUInt8(byteConvert.Byte2);
-            this.WriteUInt8(byteConvert.Byte3);
+            _Write((byte*)&val, sizeof(short));
         }
-        public void WriteInt64(long val)
+        public unsafe void WriteInt32(int val)
         {
             this.Check();
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Int64Value = val;
-            this.WriteUInt8(byteConvert.Byte0);
-            this.WriteUInt8(byteConvert.Byte1);
-            this.WriteUInt8(byteConvert.Byte2);
-            this.WriteUInt8(byteConvert.Byte3);
-            this.WriteUInt8(byteConvert.Byte4);
-            this.WriteUInt8(byteConvert.Byte5);
-            this.WriteUInt8(byteConvert.Byte6);
-            this.WriteUInt8(byteConvert.Byte7);
+            _Write((byte*)&val, sizeof(int));
         }
-        public void WriteFloat(float val)
+        public unsafe void WriteInt64(long val)
         {
             this.Check();
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.FloatValue = val;
-            this.WriteUInt8(byteConvert.Byte0);
-            this.WriteUInt8(byteConvert.Byte1);
-            this.WriteUInt8(byteConvert.Byte2);
-            this.WriteUInt8(byteConvert.Byte3);
+            _Write((byte*)&val, sizeof(long));
         }
-        public void WriteDouble(double val)
+        public unsafe void WriteFloat(float val)
         {
             this.Check();
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.DoubleValue = val;
-            this.WriteUInt8(byteConvert.Byte0);
-            this.WriteUInt8(byteConvert.Byte1);
-            this.WriteUInt8(byteConvert.Byte2);
-            this.WriteUInt8(byteConvert.Byte3);
-            this.WriteUInt8(byteConvert.Byte4);
-            this.WriteUInt8(byteConvert.Byte5);
-            this.WriteUInt8(byteConvert.Byte6);
-            this.WriteUInt8(byteConvert.Byte7);
+            _Write((byte*)&val, sizeof(float));
+        }
+        public unsafe void WriteDouble(double val)
+        {
+            this.Check();
+            _Write((byte*)&val, sizeof(double));
         }
         public unsafe void WriteBytes(byte[] val)
         {
             this.Check();
             fixed (byte* data = &val[0])
             {
-                Native.NETSND_WriteBytes(this.ptr, data, val.Length);
+                _Write(data, val.Length);
             }
         }
         public unsafe void WriteBytes(byte[] val, int offset, int length)
@@ -379,7 +356,7 @@ namespace RustPeerTests
             }
             fixed (byte* data = &val[0])
             {
-                Native.NETSND_WriteBytes(this.ptr, data, length);
+                _Write(data, length);
             }
         }
         public uint SendBroadcast(Priority priority, SendMethod reliability, sbyte channel)
@@ -451,7 +428,7 @@ namespace RustPeerTests
         {
             if (this.ptr == IntPtr.Zero)
             {
-                throw new NullReferenceException("PeerV2 has already shut down!");
+                throw new NullReferenceException("Peer has already shut down!");
             }
         }
         public string GetStatisticsString(ulong guid)

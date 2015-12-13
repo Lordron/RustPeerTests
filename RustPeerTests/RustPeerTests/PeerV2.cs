@@ -1,5 +1,4 @@
-﻿using Facepunch;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Security;
 using Network;
@@ -97,7 +96,7 @@ namespace RustPeerTests
                 return Native.NETRCV_GetAge(this.ptr);
             }
         }
-        public static PeerV2 CreateServer(string ip, int port, int maxConnections)
+        public static Peer CreateServer(string ip, int port, int maxConnections)
         {
             Peer peer = new Peer();
             peer.ptr = Native.NET_Create();
@@ -117,7 +116,7 @@ namespace RustPeerTests
             }));
             return null;
         }
-        public static PeerV2 CreateConnection(string hostname, int port, int retries, int retryDelay, int timeout)
+        public static Peer CreateConnection(string hostname, int port, int retries, int retryDelay, int timeout)
         {
             Peer peer = new Peer();
             peer.ptr = Native.NET_Create();
@@ -172,50 +171,33 @@ namespace RustPeerTests
         {
             return this.ReadUInt8() != 0;
         }
-        public long ReadInt64()
+        public unsafe long ReadInt64()
         {
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Byte0 = this.ReadByte();
-            byteConvert.Byte1 = this.ReadByte();
-            byteConvert.Byte2 = this.ReadByte();
-            byteConvert.Byte3 = this.ReadByte();
-            byteConvert.Byte4 = this.ReadByte();
-            byteConvert.Byte5 = this.ReadByte();
-            byteConvert.Byte6 = this.ReadByte();
-            byteConvert.Byte7 = this.ReadByte();
-            return byteConvert.Int64Value;
+            return *(byte*)_Read(sizeof(long));
         }
-        public int ReadInt32()
+        public unsafe int ReadInt32()
         {
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Byte0 = this.ReadByte();
-            byteConvert.Byte1 = this.ReadByte();
-            byteConvert.Byte2 = this.ReadByte();
-            byteConvert.Byte3 = this.ReadByte();
-            return byteConvert.Int32Value;
+            return *(byte*)_Read(sizeof(int));
         }
-        public short ReadInt16()
+        public unsafe short ReadInt16()
         {
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Byte0 = this.ReadByte();
-            byteConvert.Byte1 = this.ReadByte();
-            return byteConvert.Int16Value;
+            return *(byte*)_Read(sizeof(short));
         }
-        public sbyte ReadInt8()
+        public unsafe sbyte ReadInt8()
         {
-            return (sbyte)this.ReadUInt8();
+            return *(sbyte*)_Read(sizeof(sbyte));
         }
-        public ulong ReadUInt64()
+        public unsafe ulong ReadUInt64()
         {
-            return (ulong)this.ReadInt64();
+            return *(byte*)_Read(sizeof(ulong));
         }
-        public uint ReadUInt32()
+        public unsafe uint ReadUInt32()
         {
-            return (uint)this.ReadInt32();
+            return *(byte*)_Read(sizeof(uint));
         }
-        public ushort ReadUInt16()
+        public unsafe ushort ReadUInt16()
         {
-            return (ushort)this.ReadInt16();
+            return *(byte*)_Read(sizeof(ushort));
         }
         public byte ReadUInt8()
         {
@@ -225,41 +207,35 @@ namespace RustPeerTests
         {
             Native.NETRCV_SetReadPointer(this.ptr, pos);
         }
-        public float ReadFloat()
+        public unsafe float ReadFloat()
         {
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Byte0 = this.ReadByte();
-            byteConvert.Byte1 = this.ReadByte();
-            byteConvert.Byte2 = this.ReadByte();
-            byteConvert.Byte3 = this.ReadByte();
-            return byteConvert.FloatValue;
+            return *(byte*)_Read(sizeof(float));
         }
-        public double ReadDouble()
+        public unsafe double ReadDouble()
         {
-            ByteConvert byteConvert = default(ByteConvert);
-            byteConvert.Byte0 = this.ReadByte();
-            byteConvert.Byte1 = this.ReadByte();
-            byteConvert.Byte2 = this.ReadByte();
-            byteConvert.Byte3 = this.ReadByte();
-            byteConvert.Byte4 = this.ReadByte();
-            byteConvert.Byte5 = this.ReadByte();
-            byteConvert.Byte6 = this.ReadByte();
-            byteConvert.Byte7 = this.ReadByte();
-            return byteConvert.DoubleValue;
+            return *(byte*)_Read(sizeof(double));
         }
+
+        private unsafe byte* _Read(int size)
+        {
+            fixed (byte* data = &PeerV2.ByteBuffer[0])
+            {
+                if (!Native.NETRCV_ReadBytes(this.ptr, data, size))
+                {
+                    Debug.LogError("NETRCV_ReadBytes returned false");
+                    return null;
+                }
+
+                return data;
+            }
+        }
+
         public unsafe byte ReadByte()
         {
             this.Check();
-            fixed (byte* data = &PeerV2.ByteBuffer[0])
-            {
-                if (!Native.NETRCV_ReadBytes(this.ptr, data, 1))
-                {
-                    Debug.LogError("NETRCV_ReadBytes returned false");
-                    return 0;
-                }
-            }
-            return PeerV2.ByteBuffer[0];
+            return *(byte*)_Read(sizeof(byte));
         }
+
         public unsafe byte[] ReadBytes(int length)
         {
             this.Check();
@@ -295,7 +271,7 @@ namespace RustPeerTests
         }
         public unsafe void WriteUInt8(byte val)
         {
-            _Write(&val, sizeof (byte));
+            _Write(&val, sizeof(byte));
         }
 
         public unsafe void WriteUInt16(ushort val)

@@ -218,6 +218,8 @@ namespace RustPeerTests
 
         private unsafe byte* _Read(int size)
         {
+            this.Check();
+
             fixed (byte* data = &PeerV2.ByteBuffer[0])
             {
                 if (!Native.NETRCV_ReadBytes(this.ptr, data, size))
@@ -232,7 +234,6 @@ namespace RustPeerTests
 
         public unsafe byte ReadByte()
         {
-            this.Check();
             return *(byte*)_Read(sizeof(byte));
         }
 
@@ -262,6 +263,7 @@ namespace RustPeerTests
 
         private unsafe void _Write(byte* data, int size)
         {
+            this.Check();
             Native.NETSND_WriteBytes(this.ptr, data, size);
         }
 
@@ -292,32 +294,26 @@ namespace RustPeerTests
         }
         public unsafe void WriteInt16(short val)
         {
-            this.Check();
             _Write((byte*)&val, sizeof(short));
         }
         public unsafe void WriteInt32(int val)
         {
-            this.Check();
             _Write((byte*)&val, sizeof(int));
         }
         public unsafe void WriteInt64(long val)
         {
-            this.Check();
             _Write((byte*)&val, sizeof(long));
         }
         public unsafe void WriteFloat(float val)
         {
-            this.Check();
             _Write((byte*)&val, sizeof(float));
         }
         public unsafe void WriteDouble(double val)
         {
-            this.Check();
             _Write((byte*)&val, sizeof(double));
         }
         public unsafe void WriteBytes(byte[] val)
         {
-            this.Check();
             fixed (byte* data = &val[0])
             {
                 _Write(data, val.Length);
@@ -325,7 +321,6 @@ namespace RustPeerTests
         }
         public unsafe void WriteBytes(byte[] val, int offset, int length)
         {
-            this.Check();
             if (offset != 0)
             {
                 throw new NotSupportedException("offset != 0");

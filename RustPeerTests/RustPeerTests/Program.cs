@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using Facepunch;
 using Network;
 using Network.Implementation.Raknet;
 
@@ -93,16 +95,87 @@ namespace RustPeerTests
         }
     }
 
+    public sealed class ReadCStringTest : TestImpl
+    {
+        public static byte[] s_SomeBytes = Encoding.UTF8.GetBytes("Somenullterminatedstringfortestpurpose" + '\0');
+
+        private BinaryReader reader;
+
+        public ReadCStringTest(int count)
+            : base(typeof(ReadCStringTest).Name, count)
+        {
+            reader = new BinaryReader(new MemoryStream(s_SomeBytes, false));
+        }
+        protected override void Test()
+        {
+            var pos = reader.BaseStream.Position;
+            string str = ReadNullTerminatedString(reader);
+            reader.BaseStream.Position = pos;
+        }
+
+        internal string ReadNullTerminatedString(BinaryReader read)
+        {
+            string text = string.Empty;
+            while (read.BaseStream.Position != read.BaseStream.Length)
+            {
+                char c = (char)read.ReadSByte();
+                if (c == '\0')
+                {
+                    return text;
+                }
+                text += c;
+            }
+            return string.Empty;
+        }
+    }
+
+    public sealed class OptimizedReadCStringTest : TestImpl
+    {
+        public static byte[] s_SomeBytes = Encoding.UTF8.GetBytes("Somenullterminatedstringfortestpurpose" + '\0');
+
+        private BinaryReader reader;
+
+        public OptimizedReadCStringTest(int count)
+            : base(typeof(OptimizedReadCStringTest).Name, count)
+        {
+            reader = new BinaryReader(new MemoryStream(s_SomeBytes));
+        }
+        protected override void Test()
+        {
+            var pos = reader.BaseStream.Position;
+            string str = ReadNullTerminatedString(reader);
+            reader.BaseStream.Position = pos;
+        }
+
+        internal string ReadNullTerminatedString(BinaryReader read)
+        {
+            // End of stream case
+            if (read.BaseStream.Position == read.BaseStream.Length)
+                return string.Empty;
+
+            List<byte> list = new List<byte>();
+            while (read.BaseStream.Position != read.BaseStream.Length)
+            {
+                int nc = read.ReadSByte();
+                if (((Char)nc) == '\0')
+                    break;
+
+                list.Add((byte)nc);
+            }
+            return Encoding.UTF8.GetString(list.ToArray());
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            RustPeer test0 = new RustPeer(10000);
+            ReadCStringTest test0 = new ReadCStringTest(10000);
             test0.RunTest();
 
             Console.WriteLine();
 
-            OptimizedRustPeer test1 = new OptimizedRustPeer(10000);
+            OptimizedReadCStringTest test1 = new OptimizedReadCStringTest(10000);
             test1.RunTest();
         }
     }
